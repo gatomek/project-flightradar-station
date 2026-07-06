@@ -15,7 +15,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.text.MessageFormat;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.*;
 
 public class Main {
@@ -40,8 +39,6 @@ public class Main {
             Runnable task = () ->
                     CompletableFuture
                             .supplyAsync(logClientService::getAircraftLogs, es)
-                            .thenApplyAsync(logs -> Optional.ofNullable(logs).orElseThrow(
-                                    () -> new RuntimeException("Aircraft logs are null or could not be retrieved")), es)
                             .thenAcceptAsync(logPublisherService::publishAircraftLog, es)
                             .exceptionallyAsync(ex -> {
                                         LOGGER.error("Main", ex);
