@@ -1,0 +1,11 @@
+- name: Restart service radar-station
+  gather_facts: no
+  hosts: servers
+  remote_user: "{{ remote_usr }}"
+  become: true
+  become_method: sudo
+  tasks:
+    - name: "Restart service {{ app_name }}"
+      systemd:
+        state: restarted
+        name: "{{ app_name }}"

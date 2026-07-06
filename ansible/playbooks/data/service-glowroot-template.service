@@ -1,0 +1,16 @@
+[Unit]
+Description={{ app_name }}
+After=syslog.target
+
+[Service]
+User={{ app_name }}
+ExecStart=/usr/bin/java -javaagent:/usr/local/{{ app_name }}/glowroot.jar -jar /usr/local/{{ app_name }}/{{ app_name }}.jar {{ radar_location }}
+WorkingDirectory=/usr/local/{{ app_name }}
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier={{ app_name }}
+SuccessExitStatus=143
+EnvironmentFile=/usr/local/{{ app_name }}/prod.env
+
+[Install]
+WantedBy=multi-user.target

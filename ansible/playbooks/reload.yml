@@ -1,0 +1,12 @@
+- name: Reload service radar-station
+  gather_facts: no
+  hosts: servers
+  remote_user: "{{ remote_usr }}"
+  become: true
+  become_method: sudo
+  tasks:
+    - name: "Reload service {{ app_name }}"
+      systemd:
+        daemon_reload: yes
+        state: restarted
+        name: "{{ app_name }}"

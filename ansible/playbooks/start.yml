@@ -1,0 +1,11 @@
+- name: Start service radar-station
+  gather_facts: no
+  hosts: servers
+  remote_user: "{{ remote_usr }}"
+  become: true
+  become_method: sudo
+  tasks:
+    - name: "Start service {{ app_name }}"
+      systemd:
+        state: started
+        name: "{{ app_name }}"
