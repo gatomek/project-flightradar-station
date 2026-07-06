@@ -1,0 +1,7 @@
+servers:
+  vars:
+    app_name:
+    user_password:
+    remote_usr:
+    ansible_become_pass:
+    radar_location:

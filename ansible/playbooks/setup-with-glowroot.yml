@@ -1,0 +1,78 @@
+- name: Setup service radar-station
+  gather_facts: no
+  hosts: servers
+  remote_user: "{{ remote_usr }}"
+  become: true
+  become_method: sudo
+  tasks:
+    - name: "Creating user {{ app_name }}"
+      user:
+        name: "{{ app_name }}"
+        shell: /bin/false
+        system: true
+        password: "{{ user_password | password_hash('sha512') }}"
+        state: present
+
+    - name: "Create app folder /usr/local/{{ app_name }}"
+      file:
+        path: "/usr/local/{{ app_name }}"
+        state: directory
+        owner: "{{ app_name }}"
+        group: "{{ app_name }}"
+        mode: '0700'
+
+    - name: "Copy app to /usr/local/{{ app_name }}/"
+      copy:
+        src: "../../target/{{ app_name }}.jar"
+        dest: "/usr/local/{{ app_name }}/{{ app_name }}.jar"
+        owner: "{{ app_name }}"
+        group: "{{ app_name }}"
+
+    - name: Copy prod.env to app folder
+      copy:
+        src: ./data/prod.env
+        dest: "/usr/local/{{ app_name }}/"
+        owner: "{{ app_name }}"
+        group: "{{ app_name }}"
+
+    - name: "Render systemd service-glowroot-template.service config file to /etc/systemd/system/{{ app_name }}.service"
+      template:
+        src: data/service-glowroot-template.service
+        dest: "/etc/systemd/system/{{ app_name }}.service"
+        owner: root
+        group: root
+
+    - name: "Copy glowroot folder content to /usr/local/{{ app_name }}"
+      copy:
+        src: "./glowroot/"
+        dest: "/usr/local/{{ app_name }}/"
+        owner: "{{ app_name }}"
+        group: "{{ app_name }}"
+
+    - name: "Copy ssl certificate for glowroot to /usr/local/{{ app_name }}/ui-cert.pem"
+      copy:
+        remote_src: true
+        src: /etc/letsencrypt/live/113-30-190-16.cloud-xip.com/fullchain.pem
+        dest: "/usr/local/{{ app_name }}/ui-cert.pem"
+        owner: "{{ app_name }}"
+        group: "{{ app_name }}"
+        mode: 0600
+
+    - name: "Copy ssl private key for glowroot to /usr/local/{{ app_name }}/ui-key.pem"
+      copy:
+        remote_src: true
+        src: /etc/letsencrypt/live/113-30-190-16.cloud-xip.com/privkey.pem
+        dest: "/usr/local/{{ app_name }}/ui-key.pem"
+        owner: "{{ app_name }}"
+        group: "{{ app_name }}"
+        mode: 0600
+
+    - name: Reload systemd
+      systemd:
+        daemon_reload: yes
+
+    - name: "Restart service {{ app_name }}"
+      systemd:
+        name: "{{ app_name }}"
+        state: restarted
+        enabled: true
