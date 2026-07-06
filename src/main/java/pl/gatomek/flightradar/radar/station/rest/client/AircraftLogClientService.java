@@ -10,19 +10,15 @@ import java.io.IOException;
 
 public class AircraftLogClientService {
     private static final Logger LOGGER = LoggerFactory.getLogger(AircraftLogClientService.class);
-    private final String url;
     private final OkHttpClient httpClient;
+    private final Request request;
 
     public AircraftLogClientService(OkHttpClient httpClient, String url) {
-        this.url = url;
         this.httpClient = httpClient;
+        this.request = new Request.Builder().url(url).build();
     }
 
     public String getAircraftLogs() {
-        Request request = new Request.Builder()
-                .url(url)
-                .build();
-
         try (Response response = httpClient.newCall(request).execute()) {
             if (!response.isSuccessful()) {
                 return null;
