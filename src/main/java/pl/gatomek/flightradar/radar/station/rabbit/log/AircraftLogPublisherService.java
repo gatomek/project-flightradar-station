@@ -56,9 +56,9 @@ public class AircraftLogPublisherService {
     }
 
     public void publishAircraftLog(String aircraftLog) {
-         if( aircraftLog == null) {
-             return;
-         }
+        if (aircraftLog == null) {
+            return;
+        }
 
         try {
             byte[] messageBody;
