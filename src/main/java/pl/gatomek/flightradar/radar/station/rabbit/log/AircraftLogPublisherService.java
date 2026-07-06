@@ -56,6 +56,10 @@ public class AircraftLogPublisherService {
     }
 
     public void publishAircraftLog(String aircraftLog) {
+         if( aircraftLog == null) {
+             return;
+         }
+
         try {
             byte[] messageBody;
             try (ByteArrayOutputStream os = new ByteArrayOutputStream();
