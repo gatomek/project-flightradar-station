@@ -24,13 +24,17 @@ public class AircraftLogClientService {
                 .build();
 
         try (Response response = httpClient.newCall(request).execute()) {
-            if (response.isSuccessful()) {
-                return response.body().string();
-            } else {
-                LOGGER.error("Response error: {}", response.code());
+            if (!response.isSuccessful()) {
+                return null;
             }
-        } catch (NullPointerException npe) {
-            LOGGER.warn("Null Pointer Exception", npe);
+
+            okhttp3.ResponseBody body = response.body();
+            if (body == null) {
+                LOGGER.warn("Response body is null");
+                return null;
+            }
+
+            return body.string();
         } catch (IOException ioe) {
             LOGGER.error("IO Exception", ioe);
         }
