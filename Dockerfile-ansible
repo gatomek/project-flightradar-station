@@ -1,0 +1,13 @@
+FROM alpine/ansible:2.21.0
+RUN apk add --no-cache openssh-client
+RUN mkdir -p -m 0700 /root/.ssh
+COPY secret/id_rsa /root/.ssh/id_rsa
+RUN chmod 600 /root/.ssh/id_rsa
+RUN ssh-keyscan 113-30-190-16.cloud-xip.com >> /root/.ssh/known_hosts
+RUN ssh-keyscan tower >> /root/.ssh/known_hosts
+RUN chmod 600 /root/.ssh/known_hosts
+WORKDIR /apps
+COPY ansible/ ./ansible/
+COPY target/radar-station.jar ./target/
+WORKDIR /apps/ansible
+CMD ["ansible-playbook","--version"]
