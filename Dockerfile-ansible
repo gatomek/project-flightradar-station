@@ -10,4 +10,4 @@ WORKDIR /apps
 COPY ansible/ ./ansible/
 COPY target/radar-station.jar ./target/
 WORKDIR /apps/ansible
-CMD ["ls"]
+CMD ["ansible-playbook","--version"]
