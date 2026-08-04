@@ -19,7 +19,6 @@ import java.util.zip.GZIPOutputStream;
 
 public class AircraftLogPublisherService {
     private static final Logger LOGGER = LoggerFactory.getLogger(AircraftLogPublisherService.class);
-    private static final String QUEUE_NAME = "RADAR_DATA";
 
     private final RabbitMQConnectionFactory connectionFactory;
     private final ExecutorService es = Executors.newSingleThreadExecutor();
@@ -30,10 +29,10 @@ public class AircraftLogPublisherService {
         this.connectionFactory = connectionFactory;
     }
 
-    public void open() throws IOException, TimeoutException {
+    public void open(String queueName) throws IOException, TimeoutException {
         connection = connectionFactory.getConnectionFactory().newConnection(es);
         channel = connection.createChannel();
-        channel.queueDeclare(QUEUE_NAME, true, false, false, null);
+        channel.queueDeclare(queueName, true, false, false, null);
     }
 
     public void close() throws IOException, TimeoutException {
@@ -55,7 +54,7 @@ public class AircraftLogPublisherService {
         }
     }
 
-    public void publishAircraftLog(String aircraftLog) {
+    public void publishAircraftLog(String queueName, String aircraftLog) {
         if (aircraftLog == null) {
             return;
         }
@@ -74,7 +73,7 @@ public class AircraftLogPublisherService {
             propsBuilder.contentEncoding("gzip");
             BasicProperties props = propsBuilder.build();
 
-            channel.basicPublish("", QUEUE_NAME, props, messageBody);
+            channel.basicPublish("", queueName, props, messageBody);
         } catch (IOException ioe) {
             LOGGER.error("Publish Aircraft Log", ioe);
         }
