@@ -20,6 +20,8 @@ import java.util.concurrent.*;
 public class Main {
     private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
     private static final String URL_PATTERN = "https://api.airplanes.live/v2/point/{0}/{1}/{2}";
+    private static final String RADAR_DATA_QUEUE_NAME = "RADAR_DATA";
+    private static final String RADAR_EVENT_QUEUE_NAME = "RADAR_EVENT";
 
     public static void main(String[] args) {
         String localization = getLocalizationFromArguments(args);
@@ -33,13 +35,19 @@ public class Main {
 
         RabbitProperties rabbitProps = loadRabbitProps();
         RabbitMQConnectionFactory rabbitMQConnectionFactory = new RabbitMQConnectionFactory(rabbitProps);
-        AircraftLogPublisherService logPublisherService = new AircraftLogPublisherService(rabbitMQConnectionFactory);
+        AircraftLogPublisherService logPublisherService =
+                new AircraftLogPublisherService(RADAR_DATA_QUEUE_NAME, rabbitMQConnectionFactory);
+        AircraftLogPublisherService evtPublisherService =
+                new AircraftLogPublisherService(RADAR_EVENT_QUEUE_NAME, rabbitMQConnectionFactory);
 
         try (ExecutorService es = Executors.newSingleThreadExecutor()) {
             Runnable task = () ->
                     CompletableFuture
                             .supplyAsync(logClientService::getAircraftLogs, es)
-                            .thenAcceptAsync(logPublisherService::publishAircraftLog, es)
+                            .thenAcceptAsync(log -> {
+                                    logPublisherService.publishAircraftLog(log);
+                                    evtPublisherService.publishAircraftLog(log);
+                            }, es)
                             .exceptionallyAsync(ex -> {
                                         LOGGER.error("Main", ex);
                                         return null;
@@ -49,11 +57,15 @@ public class Main {
             RadarClockClientService clockClientService = new RadarClockClientService(rabbitMQConnectionFactory, task);
 
             boolean logPublisherOpened = false;
+            boolean evtPublisherOpened = false;
             boolean clockClientOpened = false;
 
             try {
                 logPublisherService.open();
                 logPublisherOpened = true;
+
+                evtPublisherService.open();
+                evtPublisherOpened = true;
 
                 clockClientService.open();
                 clockClientOpened = true;
@@ -76,7 +88,15 @@ public class Main {
                     try {
                         logPublisherService.close();
                     } catch (Exception ex) {
-                        LOGGER.warn("Failed to close AircraftLogPublisherService", ex);
+                        LOGGER.warn("Failed to close Data AircraftLogPublisherService", ex);
+                    }
+                }
+
+                if (evtPublisherOpened) {
+                    try {
+                        evtPublisherService.close();
+                    } catch (Exception ex) {
+                        LOGGER.warn("Failed to close Event AircraftLogPublisherService", ex);
                     }
                 }
 

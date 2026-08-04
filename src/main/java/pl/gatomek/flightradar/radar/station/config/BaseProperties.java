@@ -16,15 +16,17 @@ public class BaseProperties {
 
     public String get(String name) throws UnsupportedOperationException {
         String s = values.get(name);
-        if (s != null) return s;
+        if (s != null) {
+            return s;
+        }
 
-        String v = getCore(name);
-
+        String v = loadValue(name);
         if (v == null) {
             throw new IllegalArgumentException("Configuration error: '" + name + "' property is missing.");
         }
 
-        if (v.trim().isEmpty()) {
+        v = v.trim();
+        if (v.isEmpty()) {
             throw new IllegalArgumentException("Configuration error: '" + name + "' property is empty.");
         }
 
@@ -32,7 +34,7 @@ public class BaseProperties {
         return v;
     }
 
-    private String getCore(String name) throws UnsupportedOperationException {
+    private String loadValue(String name) throws UnsupportedOperationException {
         String key = name.replace(".", "_").toUpperCase();
         String ev = System.getenv(key);
         if (ev != null) {
