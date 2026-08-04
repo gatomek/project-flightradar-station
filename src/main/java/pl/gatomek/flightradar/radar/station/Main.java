@@ -35,16 +35,18 @@ public class Main {
 
         RabbitProperties rabbitProps = loadRabbitProps();
         RabbitMQConnectionFactory rabbitMQConnectionFactory = new RabbitMQConnectionFactory(rabbitProps);
-        AircraftLogPublisherService logPublisherService = new AircraftLogPublisherService(rabbitMQConnectionFactory);
-        AircraftLogPublisherService evtPublisherService = new AircraftLogPublisherService(rabbitMQConnectionFactory);
+        AircraftLogPublisherService logPublisherService =
+                new AircraftLogPublisherService(RADAR_DATA_QUEUE_NAME, rabbitMQConnectionFactory);
+        AircraftLogPublisherService evtPublisherService =
+                new AircraftLogPublisherService(RADAR_EVENT_QUEUE_NAME, rabbitMQConnectionFactory);
 
         try (ExecutorService es = Executors.newSingleThreadExecutor()) {
             Runnable task = () ->
                     CompletableFuture
                             .supplyAsync(logClientService::getAircraftLogs, es)
                             .thenAcceptAsync(log -> {
-                                    logPublisherService.publishAircraftLog(RADAR_DATA_QUEUE_NAME, log);
-                                    evtPublisherService.publishAircraftLog(RADAR_EVENT_QUEUE_NAME, log);
+                                    logPublisherService.publishAircraftLog(log);
+                                    evtPublisherService.publishAircraftLog(log);
                             }, es)
                             .exceptionallyAsync(ex -> {
                                         LOGGER.error("Main", ex);
@@ -59,10 +61,10 @@ public class Main {
             boolean clockClientOpened = false;
 
             try {
-                logPublisherService.open(RADAR_DATA_QUEUE_NAME);
+                logPublisherService.open();
                 logPublisherOpened = true;
 
-                evtPublisherService.open(RADAR_EVENT_QUEUE_NAME);
+                evtPublisherService.open();
                 evtPublisherOpened = true;
 
                 clockClientService.open();

@@ -20,16 +20,19 @@ import java.util.zip.GZIPOutputStream;
 public class AircraftLogPublisherService {
     private static final Logger LOGGER = LoggerFactory.getLogger(AircraftLogPublisherService.class);
 
+    private final String queueName;
     private final RabbitMQConnectionFactory connectionFactory;
+
     private final ExecutorService es = Executors.newSingleThreadExecutor();
     private Connection connection;
     private Channel channel;
 
-    public AircraftLogPublisherService(RabbitMQConnectionFactory connectionFactory) {
+    public AircraftLogPublisherService(String queueName, RabbitMQConnectionFactory connectionFactory) {
+        this.queueName = queueName;
         this.connectionFactory = connectionFactory;
     }
 
-    public void open(String queueName) throws IOException, TimeoutException {
+    public void open() throws IOException, TimeoutException {
         connection = connectionFactory.getConnectionFactory().newConnection(es);
         channel = connection.createChannel();
         channel.queueDeclare(queueName, true, false, false, null);
@@ -54,7 +57,7 @@ public class AircraftLogPublisherService {
         }
     }
 
-    public void publishAircraftLog(String queueName, String aircraftLog) {
+    public void publishAircraftLog(String aircraftLog) {
         if (aircraftLog == null) {
             return;
         }
